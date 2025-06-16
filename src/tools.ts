@@ -11,6 +11,9 @@ export const TOOL_MAP = {
 export const availableTools = `
 - runCommand(command: string) : string - Executes any LINUX command and returns the STDOUT and STDERR.
 - writeFile(filePath: string, content: string) : string - Writes content to a file. 
+- openFile(filePath: string) : string - Opens a file in the default application.
+- openBrowser(url: string) : string - Opens a browser and navigates to the given URL.
+- 
 `
 
 const expandHomeDir = (filePath: string) => {
@@ -43,6 +46,30 @@ const writeFile = (filePath: string, content: string) => {
     });
 }
 
+const openFile = (filePath: string) => {
+    return new Promise((resolve, reject) => {
+        exec(`xdg-open ${filePath}`, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+            }
+            resolve(`File ${filePath} opened successfully`);
+        });
+    });
+}
+
+const openBrowser = (url: string) => {
+
+    return new Promise((resolve, reject) => {
+        exec(`xdg-open ${url}`, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+            }
+            resolve(`Browser opened successfully`);
+        });
+    });
+}
+
+
 export async function runTool(tool: string, input: string) {
     switch (tool) {
         case "runCommand":
@@ -50,6 +77,14 @@ export async function runTool(tool: string, input: string) {
         case "writeFile":
             const [filePath, content] = input.split("|");
             return await writeFile(filePath, content);
+        case "openFile":
+            return await openFile(input);
+        case "openBrowser":
+            if (input.startsWith("http")) {
+                return await openBrowser(input);
+            } else {
+                return await openBrowser(`https://${input}`);
+            }
         default:
             throw new Error(`Tool ${tool} not found`);
     }
