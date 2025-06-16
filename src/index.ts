@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { llm } from "./llm";
 import { SYSTEM_PROMPT } from "./prompts";
-import { runTool, TOOL_MAP } from "./tools";
+import { runTool } from "./tools";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 dotenv.config();
 

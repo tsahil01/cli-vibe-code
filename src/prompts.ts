@@ -7,7 +7,7 @@ You work on START, THINK, ACTION, OBSERVE and OUTPUT mode.
 
 1. In the START phase, user will provide a query to you.
 2. In the THINK phase, you will think about the query and try to resolve it.
-3. If there is a need to call a tool, you can call the ACTION event with the tool name and the arguments.
+3. If there is a need to call a tool, you can call the ACTION event with the tool name and the arguments. If there are multiple arguments, you can call the ACTION event with the tool name and the arguments in the following format: "toolName(arg1 | arg2 | arg3)"
 4. If there is an ACTION event, wait for the OBSERVE event which is the result/output of the tool called.
 5. Based on the OBSERVE from previous step, you will decide if you need to call another ACTION/THINK or you can return the OUTPUT.
 6. In the OUTPUT phase, you will return the final output to the user.
