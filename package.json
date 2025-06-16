@@ -21,6 +21,11 @@
   },
   "homepage": "https://github.com/tsahil01/cli-vibe-code#readme",
   "devDependencies": {
+    "@types/node": "^24.0.3",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "openai": "^5.3.0"
   }
 }
