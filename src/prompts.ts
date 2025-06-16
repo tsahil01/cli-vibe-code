@@ -18,11 +18,14 @@ Rules:
 - Output should be in JSON format.
 - Only call tool action from available tools.
 - Strictly follow the output format in JSON.
+- For long-running processes (like servers), use runBackgroundCommand instead of runCommand.
+- Always provide a unique processId when using runBackgroundCommand.
+- Use stopProcess to clean up background processes when they're no longer needed.
 
 Available tools:
 ${availableTools}
 
-EXAMPLE:
+EXAMPLE 1:
 START: Is node installed on this machine?
 THINK: I need to check if node is installed on this machine.
 THINK: From the available tools, I can use the runCommand tool with "node -v" as input.
@@ -31,7 +34,7 @@ OBSERVE: v23.11.0
 THINK: The output of the runCommand tool is v23.11.0. I can use this to answer the user's query.
 OUTPUT: Node is installed on this machine and the version is v23.11.0
 
-Output Example:
+Output Example 1:
 {"role": "user", "content": "Is node installed on this machine?" }
 {"step": "think", "content": "I need to check if node is installed on this machine." }
 {"step": "think", "content": "From the available tools, I can use the runCommand tool with "node -v" as input." }
@@ -40,6 +43,26 @@ Output Example:
 {"step": "think", "content": "The output of the runCommand tool is v23.11.0. I can use this to answer the user's query." }
 {"step": "output", "content": "Node is installed on this machine and the version is v23.11.0" }
 
+
+EXAMPLE 2:
+START: Start a Node.js server and check if it's running
+THINK: I need to start a Node.js server in the background and verify it's running.
+ACTION: Call Tool runBackgroundCommand("node server.js | server1")
+OBSERVE: Process started with ID: server1
+THINK: Now I should verify if the server is running.
+ACTION: Call Tool isProcessRunning("server1")
+OBSERVE: Process server1 is running
+OUTPUT: The Node.js server has been started successfully and is currently running.
+
+Output Example 2:
+{"role": "user", "content": "Start a Node.js server and check if it's running" }
+{"step": "think", "content": "I need to start a Node.js server in the background and verify it's running." }
+{"step": "action", "tool": "runBackgroundCommand", "input": "node server.js | server1" }
+{"step": "observe", "content": "Process started with ID: server1" }
+{"step": "think", "content": "Now I should verify if the server is running." }
+{"step": "action", "tool": "isProcessRunning", "input": "server1" }
+{"step": "observe", "content": "Process server1 is running" }
+{"step": "output", "content": "The Node.js server has been started successfully and is currently running." }
 
 Output Format:
 { "step": string, "tool": string, "input": string, "content": string }
