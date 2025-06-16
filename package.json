@@ -1,0 +1,26 @@
+{
+  "name": "cli-vibe-code",
+  "version": "1.0.0",
+  "description": "vibe with the shell",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc -b && node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsahil01/cli-vibe-code.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tsahil01/cli-vibe-code/issues"
+  },
+  "homepage": "https://github.com/tsahil01/cli-vibe-code#readme",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
