@@ -3,14 +3,15 @@ import { llm } from "./llm";
 import { SYSTEM_PROMPT } from "./prompts";
 import { runTool } from "./tools";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import chalk from "chalk";
 dotenv.config();
 
-async function main() {
+export async function main(userMessage: string) {
     const messages = [
         { role: "system", content: SYSTEM_PROMPT },
     ]
     
-    const userMessage = "Create a todo app in Desktop in html, css and javascript. make it complete working. and open it in VSCode";
+    // const userMessage = "Create a todo app in Desktop in html, css and javascript. make it complete working. and open it in VSCode";
     messages.push({ role: "user", content: userMessage });
     
     while (true) {
@@ -26,29 +27,29 @@ async function main() {
         const parsedResponse = JSON.parse(responseContent || "{}");
     
         if (parsedResponse.step && parsedResponse.step === "think") { 
-            console.log(`THINK: ${parsedResponse.content}`);
+            console.log(chalk.gray("Thinking: " + parsedResponse.content));
             continue;
         }
     
         if (parsedResponse.step && parsedResponse.step === "output") { 
-            console.log(`OUTPUT: ${parsedResponse.content}`);
+            console.log(chalk.bold("Output: " + parsedResponse.content));
             break;
         }
     
         if (parsedResponse.step && parsedResponse.step === "action") {
-            console.log(`ACTION: calling ${parsedResponse.tool}(${parsedResponse.input})`);
+            console.log(chalk.gray("ACTION: calling " + parsedResponse.tool + "(" + parsedResponse.input + ")"));
             const result = await runTool(parsedResponse.tool, parsedResponse.input);
-            console.log(`RESULT: ${result}`);
+            console.log(chalk.gray("Got the result from the tool call"));
             messages.push({ role: "assistant", content: JSON.stringify({ step: "observe", content: result }) });
             continue; 
         }
     
         if (parsedResponse.step && parsedResponse.step === "observe") {
-            console.log(`OBSERVE: ${parsedResponse.content}`);
+            console.log(chalk.gray("OBSERVE: " + parsedResponse.content));
             continue;
         }
     }
     
 }
 
-main();
+// main();
