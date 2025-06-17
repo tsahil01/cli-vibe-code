@@ -6,13 +6,13 @@ import path from "path";
 const runningProcesses: { [key: string]: any } = {};
 
 export const availableTools = `
-- runCommand(command: string) : string - Executes any LINUX command and returns the STDOUT and STDERR. Some commands may require user confirmation, You need to handle that by yourself.
-- runBackgroundCommand(command: string, processId: string) : string - Runs a command in the background and returns immediately. The processId is used to track the process.
-- stopProcess(processId: string) : string - Stops a running background process.
+- runCommand(command: string) : string - Executes any LINUX command and returns the STDOUT and STDERR. Some commands may require user confirmation, You need to handle that by yourself. Use && to run multiple commands.
+- runBackgroundCommand(command: string, processId: string) : string - Runs a command in the background and returns immediately. The processId is used to track the process. If the command is a long-running process, use this tool. Use && to run multiple commands.
+- stopProcess(processId: string) : string - Stops a running background process. Use this tool to stop the process.
 - isProcessRunning(processId: string) : string - Checks if a process is still running.
-- writeFile(filePath: string, content: string) : string - Writes content to a file. 
-- openFile(filePath: string) : string - Opens a file in the default application.
-- openBrowser(url: string) : string - Opens a browser and navigates to the given URL.
+- writeFile(filePath: string, content: string) : string - Writes content to a file. Use this tool to write content to a file.
+- openFile(filePath: string) : string - Opens a file in the default application. Use this tool to open a file in the default application.
+- openBrowser(url: string) : string - Opens a browser and navigates to the given URL. Use this tool to open a browser and navigate to the given URL.
 `
 
 const expandHomeDir = (filePath: string) => {
