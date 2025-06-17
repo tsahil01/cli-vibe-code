@@ -141,10 +141,10 @@ const isProcessRunning = (processId: string) => {
 
 export async function runTool(tool: string, input: string) {
     if (!tool || typeof tool !== 'string') {
-        throw new Error('Invalid tool: Tool name must be a non-empty string');
+        return 'Error: Invalid tool: Tool name must be a non-empty string';
     }
     if (input === undefined || input === null) {
-        throw new Error('Invalid input: Input cannot be null or undefined');
+        return 'Error: Invalid input: Input cannot be null or undefined';
     }
 
     try {
@@ -154,7 +154,7 @@ export async function runTool(tool: string, input: string) {
             case "runBackgroundCommand":
                 const [command, processId] = input.split("|");
                 if (!command || !processId) {
-                    throw new Error('Invalid input format: Expected "command|processId"');
+                    return 'Error: Invalid input format: Expected "command|processId"';
                 }
                 return await runBackgroundCommand(command, processId);
             case "stopProcess":
@@ -164,14 +164,14 @@ export async function runTool(tool: string, input: string) {
             case "writeFile":
                 const [filePath, content] = input.split("|");
                 if (!filePath || content === undefined) {
-                    throw new Error('Invalid input format: Expected "filePath|content"');
+                    return 'Error: Invalid input format: Expected "filePath|content"';
                 }
                 return await writeFile(filePath, content);
             case "openFile":
                 return await openFile(input);
             case "openBrowser":
                 if (!input) {
-                    throw new Error('Invalid URL: URL cannot be empty');
+                    return 'Error: Invalid URL: URL cannot be empty';
                 }
                 if (input.startsWith("http")) {
                     return await openBrowser(input);
@@ -179,9 +179,9 @@ export async function runTool(tool: string, input: string) {
                     return await openBrowser(`https://${input}`);
                 }
             default:
-                throw new Error(`Tool ${tool} not found`);
+                return `Error: Tool ${tool} not found`;
         }
     } catch (error) {
-        throw new Error(`Tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`;
     }
 }
