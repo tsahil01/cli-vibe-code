@@ -2,15 +2,15 @@
   "name": "cli-vibe-code",
   "version": "1.0.0",
   "description": "vibe with the shell",
-  "main": "dist/cli.js",
+  "main": "dist/index.js",
   "bin": {
-    "vibe": "./dist/cli.js"
+    "vibe": "./dist/index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "node dist/cli.js",
-    "dev": "tsc -b && node dist/cli.js",
+    "start": "node dist/index.js",
+    "dev": "tsc -b && node dist/index.js",
     "link": "npm link"
   },
   "repository": {
