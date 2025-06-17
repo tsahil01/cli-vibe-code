@@ -23,10 +23,14 @@ const expandHomeDir = (filePath: string) => {
 }
 
 const runCommand = (command: string) => {
+    if (!command || typeof command !== 'string') {
+        return Promise.reject(new Error('Invalid command: Command must be a non-empty string'));
+    }
     return new Promise((resolve, reject) => {
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                reject(error);
+                reject(new Error(`Command execution failed: ${error.message}`));
+                return;
             }
             resolve(`stdout: ${stdout}\n  stderr: ${stderr}`);
         });
@@ -34,11 +38,18 @@ const runCommand = (command: string) => {
 }
 
 const writeFile = (filePath: string, content: string) => {
+    if (!filePath || typeof filePath !== 'string') {
+        return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
+    }
+    if (content === undefined || content === null) {
+        return Promise.reject(new Error('Invalid content: Content cannot be null or undefined'));
+    }
     const expandedPath = expandHomeDir(filePath.trim());
     return new Promise((resolve, reject) => {
         fs.writeFile(expandedPath, content, (error) => {
             if (error) {
-                reject(error);
+                reject(new Error(`Failed to write file: ${error.message}`));
+                return;
             }   
             resolve(`File ${expandedPath} written successfully`);
         });
@@ -46,10 +57,14 @@ const writeFile = (filePath: string, content: string) => {
 }
 
 const openFile = (filePath: string) => {
+    if (!filePath || typeof filePath !== 'string') {
+        return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
+    }
     return new Promise((resolve, reject) => {
         exec(`xdg-open ${filePath}`, (error, stdout, stderr) => {
             if (error) {
-                reject(error);
+                reject(new Error(`Failed to open file: ${error.message}`));
+                return;
             }
             resolve(`File ${filePath} opened successfully`);
         });
@@ -57,11 +72,14 @@ const openFile = (filePath: string) => {
 }
 
 const openBrowser = (url: string) => {
-
+    if (!url || typeof url !== 'string') {
+        return Promise.reject(new Error('Invalid URL: URL must be a non-empty string'));
+    }
     return new Promise((resolve, reject) => {
         exec(`xdg-open ${url}`, (error, stdout, stderr) => {
             if (error) {
-                reject(error);
+                reject(new Error(`Failed to open browser: ${error.message}`));
+                return;
             }
             resolve(`Browser opened successfully`);
         });
@@ -69,21 +87,34 @@ const openBrowser = (url: string) => {
 }
 
 const runBackgroundCommand = (command: string, processId: string) => {
+    if (!command || typeof command !== 'string') {
+        return Promise.reject(new Error('Invalid command: Command must be a non-empty string'));
+    }
+    if (!processId || typeof processId !== 'string') {
+        return Promise.reject(new Error('Invalid process ID: Process ID must be a non-empty string'));
+    }
     return new Promise((resolve, reject) => {
-        const [cmd, ...args] = command.split(' ');
-        const process = spawn(cmd, args, {
-            detached: true,
-            stdio: 'ignore'
-        });
-        
-        process.unref();
-        runningProcesses[processId] = process;
-        
-        resolve(`Process started with ID: ${processId}`);
+        try {
+            const [cmd, ...args] = command.split(' ');
+            const process = spawn(cmd, args, {
+                detached: true,
+                stdio: 'ignore'
+            });
+            
+            process.unref();
+            runningProcesses[processId] = process;
+            
+            resolve(`Process started with ID: ${processId}`);
+        } catch (error) {
+            reject(new Error(`Failed to start background process: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        }
     });
 }
 
 const stopProcess = (processId: string) => {
+    if (!processId || typeof processId !== 'string') {
+        return Promise.reject(new Error('Invalid process ID: Process ID must be a non-empty string'));
+    }
     return new Promise((resolve, reject) => {
         const process = runningProcesses[processId];
         if (!process) {
@@ -91,42 +122,66 @@ const stopProcess = (processId: string) => {
             return;
         }
         
-        process.kill();
-        delete runningProcesses[processId];
-        resolve(`Process ${processId} stopped successfully`);
+        try {
+            process.kill();
+            delete runningProcesses[processId];
+            resolve(`Process ${processId} stopped successfully`);
+        } catch (error) {
+            reject(new Error(`Failed to stop process: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        }
     });
 }
 
 const isProcessRunning = (processId: string) => {
-    return new Promise((resolve) => {
-        const process = runningProcesses[processId];
-        resolve(`Process ${processId} is ${process ? 'running' : 'not running'}`);
-    });
+    if (!processId || typeof processId !== 'string') {
+        return Promise.reject(new Error('Invalid process ID: Process ID must be a non-empty string'));
+    }
+    return Promise.resolve(`Process ${processId} is ${runningProcesses[processId] ? 'running' : 'not running'}`);
 }
 
 export async function runTool(tool: string, input: string) {
-    switch (tool) {
-        case "runCommand":
-            return await runCommand(input);
-        case "runBackgroundCommand":
-            const [command, processId] = input.split("|");
-            return await runBackgroundCommand(command, processId);
-        case "stopProcess":
-            return await stopProcess(input);
-        case "isProcessRunning":
-            return await isProcessRunning(input);
-        case "writeFile":
-            const [filePath, content] = input.split("|");
-            return await writeFile(filePath, content);
-        case "openFile":
-            return await openFile(input);
-        case "openBrowser":
-            if (input.startsWith("http")) {
-                return await openBrowser(input);
-            } else {
-                return await openBrowser(`https://${input}`);
-            }
-        default:
-            throw new Error(`Tool ${tool} not found`);
+    if (!tool || typeof tool !== 'string') {
+        throw new Error('Invalid tool: Tool name must be a non-empty string');
+    }
+    if (input === undefined || input === null) {
+        throw new Error('Invalid input: Input cannot be null or undefined');
+    }
+
+    try {
+        switch (tool) {
+            case "runCommand":
+                return await runCommand(input);
+            case "runBackgroundCommand":
+                const [command, processId] = input.split("|");
+                if (!command || !processId) {
+                    throw new Error('Invalid input format: Expected "command|processId"');
+                }
+                return await runBackgroundCommand(command, processId);
+            case "stopProcess":
+                return await stopProcess(input);
+            case "isProcessRunning":
+                return await isProcessRunning(input);
+            case "writeFile":
+                const [filePath, content] = input.split("|");
+                if (!filePath || content === undefined) {
+                    throw new Error('Invalid input format: Expected "filePath|content"');
+                }
+                return await writeFile(filePath, content);
+            case "openFile":
+                return await openFile(input);
+            case "openBrowser":
+                if (!input) {
+                    throw new Error('Invalid URL: URL cannot be empty');
+                }
+                if (input.startsWith("http")) {
+                    return await openBrowser(input);
+                } else {
+                    return await openBrowser(`https://${input}`);
+                }
+            default:
+                throw new Error(`Tool ${tool} not found`);
+        }
+    } catch (error) {
+        throw new Error(`Tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
