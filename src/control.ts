@@ -19,7 +19,7 @@ export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
         const parsedResponse = JSON.parse(responseContent || "{}");
     
         if (parsedResponse.step && parsedResponse.step === "think") { 
-            console.log(chalk.gray("Thinking: " + parsedResponse.content));
+            console.log(chalk.dim("Thinking: " + parsedResponse.content));
             continue;
         }
     
@@ -29,15 +29,15 @@ export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
         }
     
         if (parsedResponse.step && parsedResponse.step === "action") {
-            console.log(chalk.gray("ACTION: calling " + parsedResponse.tool + "(" + parsedResponse.input + ")"));
+            console.log(chalk.dim("Calling Action: " + parsedResponse.tool + "(" + parsedResponse.input + ")"));
             const result = await runTool(parsedResponse.tool, parsedResponse.input);
-            console.log(chalk.gray("Got the result from the tool call"));
+            console.log(chalk.dim("Got the result from the action call"));
             messages.push({ role: "assistant", content: JSON.stringify({ step: "observe", content: result }) });
             continue; 
         }
     
         if (parsedResponse.step && parsedResponse.step === "observe") {
-            console.log(chalk.gray("OBSERVE: " + parsedResponse.content));
+            console.log(chalk.dim("OBSERVE: " + parsedResponse.content));
             continue;
         }
     }
