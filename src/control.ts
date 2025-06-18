@@ -20,7 +20,18 @@ export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
         const responseContent = response.choices[0].message.content
         messages.push({ role: "assistant", content: responseContent || "" });
     
-        const parsedResponse = JSON.parse(responseContent || "{}");
+        let parsedResponse;
+        try {
+            const cleanedContent = responseContent?.trim() || "{}";
+            parsedResponse = JSON.parse(cleanedContent);
+        } catch (error) {
+            console.error(chalk.red("Error parsing JSON response, trying again..."));
+            messages.push({ 
+                role: "user", 
+                content: "The previous response was not valid JSON. Please provide a properly formatted JSON response." 
+            });
+            continue;
+        }
     
         if (parsedResponse.step && parsedResponse.step === "think") { 
             console.log(chalk.dim("Thinking: " + parsedResponse.content));
@@ -33,6 +44,7 @@ export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
         }
     
         if (parsedResponse.step && parsedResponse.step === "action") {
+            console.log("CALLING ACTION", parsedResponse.tool, parsedResponse.input);
             const actionSpinner = ora(`Calling Action: ${parsedResponse.tool}(${parsedResponse.input})`).start();
             const result = await runTool(parsedResponse.tool, parsedResponse.input);
             actionSpinner.succeed(`Action completed: ${parsedResponse.tool}`);
