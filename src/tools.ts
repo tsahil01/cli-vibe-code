@@ -2,6 +2,7 @@ import { exec, spawn } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import * as Diff from 'diff';
 
 const runningProcesses: { [key: string]: any } = {};
 
@@ -12,6 +13,7 @@ export const availableTools = `
 - isProcessRunning(processId: string) : string - Checks if a process is still running.
 - writeFile(filePath: string, content: string) : string - Writes content to a file. Use this tool to write content to a file.
 - openFile(filePath: string) : string - Opens a file in the default application. Use this tool to open a file in the default application.
+- editFile(filePath: string, content: string) : string - Edits a file and returns the result. Use this tool to edit a file. You should use the GNU patch format to edit the file.
 - openBrowser(url: string) : string - Opens a browser and navigates to the given URL. Use this tool to open a browser and navigate to the given URL.
 `
 
@@ -37,7 +39,8 @@ const runCommand = (command: string) => {
     });
 }
 
-const writeFile = (filePath: string, content: string) => {
+const writeFile = (input: string) => {
+    const [filePath, content] = input.split("|");
     if (!filePath || typeof filePath !== 'string') {
         return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
     }
@@ -69,6 +72,39 @@ const openFile = (filePath: string) => {
             resolve(`File ${filePath} opened successfully`);
         });
     });
+}
+
+const editFile = (input: string) => {
+    console.log("EDITING FILE");
+    const [filePath, content] = input.split("|");
+    if (!filePath || typeof filePath !== 'string') {
+        return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
+    }
+    if (!content || typeof content !== 'string') {
+        return Promise.reject(new Error('Invalid content: Content cannot be null or undefined'));
+    }
+    console.log("FILE PATH", filePath);
+    console.log("CONTENT", content);
+    const expandedPath = expandHomeDir(filePath.trim());
+    const normalizedDiff = content.replace(/\r\n/g, '\n');
+    const patch = Diff.parsePatch(normalizedDiff);
+    console.log("PATCH", patch);
+    if (!patch || patch.length === 0) {
+        return Promise.reject(new Error('Invalid patch format'));
+    }
+    const fileContent = fs.readFileSync(expandedPath, 'utf8');
+    const result = Diff.applyPatch(fileContent, patch[0], {
+        compareLine: (lineNumber: number, line: string, operation: string, patchContent: string) => {
+            const normalizedLine = line.trim();
+            const normalizedPatchLine = patchContent.trim();
+            return normalizedLine === normalizedPatchLine;
+        }   
+    });
+    console.log("RESULT", result);
+    if (result === false) {
+        return Promise.reject(new Error('Failed to apply patch - content mismatch'));
+    }
+    return writeFile(`${expandedPath}|${result}`);
 }
 
 const openBrowser = (url: string) => {
@@ -162,11 +198,7 @@ export async function runTool(tool: string, input: string) {
             case "isProcessRunning":
                 return await isProcessRunning(input);
             case "writeFile":
-                const [filePath, content] = input.split("|");
-                if (!filePath || content === undefined) {
-                    return 'Error: Invalid input format: Expected "filePath|content"';
-                }
-                return await writeFile(filePath, content);
+                return await writeFile(input);
             case "openFile":
                 return await openFile(input);
             case "openBrowser":
@@ -178,6 +210,8 @@ export async function runTool(tool: string, input: string) {
                 } else {
                     return await openBrowser(`https://${input}`);
                 }
+            case "editFile":
+                return await editFile(input);
             default:
                 return `Error: Tool ${tool} not found`;
         }
