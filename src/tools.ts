@@ -15,6 +15,7 @@ export const availableTools = `
 - openFile(filePath: string) : string - Opens a file in the default application. Use this tool to open a file in the default application.
 - editFile(filePath: string, content: string) : string - Edits a file and returns the result. Use this tool to edit a file. You should use the GNU patch format to edit the file.
 - openBrowser(url: string) : string - Opens a browser and navigates to the given URL. Use this tool to open a browser and navigate to the given URL.
+- grepSearch(searchTerm: string, filePath: string) : string - Searches for a term in the current directory and its subdirectories. Use this tool to search for a term in the current directory and its subdirectories.
 `
 
 const expandHomeDir = (filePath: string) => {
@@ -168,6 +169,26 @@ const stopProcess = (processId: string) => {
     });
 }
 
+const grepSearch = (input: string) => {
+    const [searchTerm, filePath] = input.split("|");
+    if (!searchTerm || typeof searchTerm !== 'string') {
+        return Promise.reject(new Error('Invalid search term: Search term must be a non-empty string'));
+    }
+    if (!filePath || typeof filePath !== 'string') {
+        return Promise.reject(new Error('Invalid file path: File path must be a non-empty string'));
+    }
+    const expandedPath = expandHomeDir(filePath.trim());
+    return new Promise((resolve, reject) => {
+        exec(`grep -r ${searchTerm} ${expandedPath}`, (error, stdout, stderr) => {
+            if (error) {
+                reject(new Error(`Failed to grep search: ${error.message}`));
+                return;
+            }
+            resolve(`Grep search result: ${stdout}`);
+        });
+    });
+}       
+
 const isProcessRunning = (processId: string) => {
     if (!processId || typeof processId !== 'string') {
         return Promise.reject(new Error('Invalid process ID: Process ID must be a non-empty string'));
@@ -212,6 +233,8 @@ export async function runTool(tool: string, input: string) {
                 }
             case "editFile":
                 return await editFile(input);
+            case "grepSearch":
+                return await grepSearch(input);
             default:
                 return `Error: Tool ${tool} not found`;
         }
