@@ -49,7 +49,7 @@ export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
                 {
                     type: "confirm",
                     name: "confirm",
-                    message: `Call the tool? ${parsedResponse.tool}: ${parsedResponse.description}`,
+                    message: `Call the tool? ${parsedResponse.tool}`,
                     default: true
                 }
             ]); 
