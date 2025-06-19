@@ -3,7 +3,7 @@
 import inquirer from 'inquirer';
 import { Command } from 'commander';
 import { mainChatControl } from './control';
-import { chatRolePlay, createRolePlay, explainRolePlay, fixRolePlay, SYSTEM_PROMPT } from './prompts';
+import { chatRolePlay, createRolePlay, explainRolePlay, fixRolePlay, superAIAgentRolePlay, SYSTEM_PROMPT } from './prompts';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import fs from 'fs/promises';
 
@@ -11,7 +11,7 @@ const program = new Command();
 
 program.name('vibe')
     .description('🌈 Vibe CLI - Vibe Code in Terminal')
-    .version('1.0.0');
+    .version('1.0.0')
 
 program.command('create')
     .description('Create a new component or feature')
@@ -164,4 +164,43 @@ program
         }
     });
 
-program.parse()
+program
+  .arguments('<dirPath>')
+  .action(async (dirPath: string) => {
+    try {
+        const messages: ChatCompletionMessageParam[] = [
+            { role: "system", content: SYSTEM_PROMPT(superAIAgentRolePlay) },
+        ]
+        console.log("🌈 Vibe CLI SUPER AI Agent");
+      const stat = await fs.stat(dirPath);
+      if (stat.isDirectory()) {
+        messages.push({ role: "user", content: `I am in the directory: ${dirPath}` });
+        while (true) {
+            await mainChatControl(messages);
+            const answers = await inquirer.prompt({
+                type: 'input',
+                name: 'task',
+                message: '>'
+            });
+            if (answers.task.toLowerCase() === "exit") {
+                console.log("👋 Bye!");
+                break;
+            }
+            messages.push({ role: "user", content: answers.task });
+        }   
+      } else {
+        console.log(`'${dirPath}' is not a directory.`);
+      }
+    } catch (e) {
+      console.log(`'${dirPath}' does not exist.`);
+    }
+  });
+
+program.addHelpText('after', `\nSpecial Usage:\n  vibe <dirPath>        Launch SUPER AI Agent in the specified directory\n\nExamples:\n  vibe .                Launch in current directory\n  vibe src              Launch in 'src' directory\n`);
+
+if (process.argv.length <= 2) {
+  program.outputHelp();
+  process.exit(0);
+}
+
+program.parse();
