@@ -4,6 +4,7 @@ import { runTool } from "./tools";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import chalk from "chalk";
 import ora from "ora";
+import inquirer from "inquirer";
 dotenv.config();
 
 export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
@@ -44,10 +45,21 @@ export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
         }
     
         if (parsedResponse.step && parsedResponse.step === "action") {
-            console.log("CALLING ACTION", parsedResponse.tool, parsedResponse.input);
-            const actionSpinner = ora(`Calling Action: ${parsedResponse.tool}(${parsedResponse.input})`).start();
+            const { confirm } = await inquirer.prompt([
+                {
+                    type: "confirm",
+                    name: "confirm",
+                    message: `Do you want to call the tool? ${parsedResponse.description}: ${parsedResponse.tool}`,
+                    default: true
+                }
+            ]); 
+            if (!confirm) {
+                messages.push({ role: "assistant", content: JSON.stringify({ step: "observe", content: "User did not confirm the action" }) });
+                continue;
+            }
+            const actionSpinner = ora(`Calling Action: ${parsedResponse.description || parsedResponse.tool}`).start();
             const result = await runTool(parsedResponse.tool, parsedResponse.input);
-            actionSpinner.succeed(`Action completed: ${parsedResponse.tool}`);
+            actionSpinner.succeed(`Action completed: ${parsedResponse.tool}, ${parsedResponse.description}`);
             messages.push({ role: "assistant", content: JSON.stringify({ step: "observe", content: result }) });
             continue; 
         }

@@ -130,6 +130,7 @@ const runBackgroundCommand = (command: string, processId: string) => {
         return Promise.reject(new Error('Invalid process ID: Process ID must be a non-empty string'));
     }
     return new Promise((resolve, reject) => {
+        console.log("STARTING BACKGROUND PROCESS", command, processId);
         try {
             const [cmd, ...args] = command.split(' ');
             const process = spawn(cmd, args, {
@@ -139,10 +140,9 @@ const runBackgroundCommand = (command: string, processId: string) => {
             
             process.unref();
             runningProcesses[processId] = process;
-            
-            resolve(`Process started with ID: ${processId}`);
+            return Promise.resolve(`Process started with ID: ${processId}`);
         } catch (error) {
-            reject(new Error(`Failed to start background process: ${error instanceof Error ? error.message : 'Unknown error'}`));
+            return Promise.reject(new Error(`Failed to start background process: ${error instanceof Error ? error.message : 'Unknown error'}`));
         }
     });
 }
