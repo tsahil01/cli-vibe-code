@@ -3,6 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import * as Diff from 'diff';
+import { ToolInput } from "./types";
 
 const runningProcesses: { [key: string]: any } = {};
 
@@ -72,8 +73,7 @@ const readFile = (filePath: string) => {
     });
 }   
 
-const writeFile = (input: string) => {
-    const [filePath, content] = input.split("|");
+const writeFile = (filePath: string, content: string) => {
     if (!filePath || typeof filePath !== 'string') {
         return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
     }
@@ -107,21 +107,16 @@ const openFile = (filePath: string) => {
     });
 }
 
-const editFile = (input: string) => {
-    console.log("EDITING FILE");
-    const [filePath, content] = input.split("|");
+const editFile = (filePath: string, content: string) => {
     if (!filePath || typeof filePath !== 'string') {
         return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
     }
     if (!content || typeof content !== 'string') {
         return Promise.reject(new Error('Invalid content: Content cannot be null or undefined'));
     }
-    console.log("FILE PATH", filePath);
-    console.log("CONTENT", content);
     const expandedPath = expandHomeDir(filePath.trim());
     const normalizedDiff = content.replace(/\r\n/g, '\n');
     const patch = Diff.parsePatch(normalizedDiff);
-    console.log("PATCH", patch);
     if (!patch || patch.length === 0) {
         return Promise.reject(new Error('Invalid patch format'));
     }
@@ -133,11 +128,10 @@ const editFile = (input: string) => {
             return normalizedLine === normalizedPatchLine;
         }   
     });
-    console.log("RESULT", result);
     if (result === false) {
         return Promise.reject(new Error('Failed to apply patch - content mismatch'));
     }
-    return writeFile(`${expandedPath}|${result}`);
+    return writeFile(expandedPath, result);
 }
 
 const openBrowser = (url: string) => {
@@ -163,7 +157,6 @@ const runBackgroundCommand = (command: string, processId: string) => {
         return Promise.reject(new Error('Invalid process ID: Process ID must be a non-empty string'));
     }
     return new Promise((resolve, reject) => {
-        console.log("STARTING BACKGROUND PROCESS", command, processId);
         try {
             const [cmd, ...args] = command.split(' ');
             const process = spawn(cmd, args, {
@@ -201,8 +194,7 @@ const stopProcess = (processId: string) => {
     });
 }
 
-const grepSearch = (input: string) => {
-    const [searchTerm, filePath] = input.split("|");
+const grepSearch = (searchTerm: string, filePath: string) => {
     if (!searchTerm || typeof searchTerm !== 'string') {
         return Promise.reject(new Error('Invalid search term: Search term must be a non-empty string'));
     }
@@ -228,51 +220,74 @@ const isProcessRunning = (processId: string) => {
     return Promise.resolve(`Process ${processId} is ${runningProcesses[processId] ? 'running' : 'not running'}`);
 }
 
-export async function runTool(tool: string, input: string) {
+export async function runTool(tool: string, content: string[]) {
     if (!tool || typeof tool !== 'string') {
         return 'Error: Invalid tool: Tool name must be a non-empty string';
-    }
-    if (input === undefined || input === null) {
-        return 'Error: Invalid input: Input cannot be null or undefined';
     }
 
     try {
         switch (tool) {
             case "runCommand":
-                return await runCommand(input);
-            case "runBackgroundCommand":
-                const [command, processId] = input.split("|");
-                if (!command || !processId) {
-                    return 'Error: Invalid input format: Expected "command|processId"';
+                if (!content[0] || typeof content[0] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
                 }
-                return await runBackgroundCommand(command, processId);
+                return await runCommand(content[0]);
+            case "runBackgroundCommand":
+                if (!content[0] || typeof content[0] !== 'string' || !content[1] || typeof content[1] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await runBackgroundCommand(content[0], content[1]);
             case "stopProcess":
-                return await stopProcess(input);
+                if (!content[0] || typeof content[0] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await stopProcess(content[0]);
             case "isProcessRunning":
-                return await isProcessRunning(input);
+                if (!content[0] || typeof content[0] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await isProcessRunning(content[0]);
             case "checkCurrentDirectory":
                 return await checkCurrentDirectory();
             case "listFiles":
-                return await listFiles(input);
+                if (!content[0] || typeof content[0] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await listFiles(content[0]);
             case "readFile":
-                return await readFile(input);
+                if (!content[0] || typeof content[0] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await readFile(content[0]);
             case "writeFile":
-                return await writeFile(input);
+                    if (!content[0] || typeof content[0] !== 'string' || !content[1] || typeof content[1] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await writeFile(content[0], content[1]);
             case "openFile":
-                return await openFile(input);
+                if (!content[0] || typeof content[0] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await openFile(content[0]);
             case "openBrowser":
-                if (!input) {
+                if (!content[0] || typeof content[0] !== 'string') {
                     return 'Error: Invalid URL: URL cannot be empty';
                 }
-                if (input.startsWith("http")) {
-                    return await openBrowser(input);
+                if (content[0].startsWith("http")) {
+                    return await openBrowser(content[0]);
                 } else {
-                    return await openBrowser(`https://${input}`);
+                    return await openBrowser(`https://${content[0]}`);
                 }
             case "editFile":
-                return await editFile(input);
+                if (!content[0] || typeof content[0] !== 'string' || !content[1] || typeof content[1] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await editFile(content[0], content[1]);
             case "grepSearch":
-                return await grepSearch(input);
+                if (!content[0] || typeof content[0] !== 'string' || !content[1] || typeof content[1] !== 'string') {
+                    return 'Error: Invalid input: Input cannot be null or undefined';
+                }
+                return await grepSearch(content[0], content[1]);
             default:
                 return `Error: Tool ${tool} not found`;
         }

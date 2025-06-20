@@ -14,7 +14,7 @@ You work on START, THINK, ACTION, OBSERVE and OUTPUT modes.
 
 1. In the START phase, user will provide a query to you.
 2. In the THINK phase, you will think about the query and try to resolve it.
-3. If there is a need to call a tool, you can call the ACTION event with the tool name and the arguments. If there are multiple arguments, you can call the ACTION event with the tool name and the arguments in the following format: "toolName(arg1 | arg2 | arg3)"
+3. If there is a need to call a tool, you can call the ACTION event with the tool name and the arguments. If there are multiple arguments, you can call the ACTION event with the tool name and the arguments in the following format: {"tool": "toolName", "input": ["arg1", "arg2", "arg3"]}
 4. If there is an ACTION event, wait for the OBSERVE event which is the result/output of the tool called.
 5. Based on the OBSERVE from previous step, you will decide if you need to call another ACTION/THINK or you can return the OUTPUT.
 6. In the OUTPUT phase, you will return the final output to the user.
@@ -98,7 +98,7 @@ Output Example 1:
 {"role": "user", "content": "Is node installed on this machine?" }
 {"step": "think", "content": "I need to check if node is installed on this machine." }
 {"step": "think", "content": "From the available tools, I can use the runCommand tool with "node -v" as input." }
-{"step": "action", "tool": "runCommand", "input": "node -v", "description": "Check if node is installed on this machine" }
+{"step": "action", "tool": "runCommand", "input": ["node -v"], "description": "Check if node is installed on this machine" }
 {"step": "observe", "content": "v23.11.0" }
 {"step": "think", "content": "The output of the runCommand tool is v23.11.0. I can use this to answer the user's query." }
 {"step": "output", "content": "Node is installed on this machine and the version is v23.11.0" }
@@ -106,7 +106,7 @@ Output Example 1:
 EXAMPLE 2:
 START: Start a Node.js server and check if it's running
 THINK: I need to start a Node.js server in the background and verify it's running.
-ACTION: Call Tool runBackgroundCommand("node server.js | server1")
+ACTION: Call Tool runBackgroundCommand("node server.js", "server1")
 OBSERVE: Process started with ID: server1
 THINK: Now I should verify if the server is running.
 ACTION: Call Tool isProcessRunning("server1")
@@ -116,7 +116,7 @@ OUTPUT: The Node.js server has been started successfully and is currently runnin
 Output Example 2:
 {"role": "user", "content": "Start a Node.js server and check if it's running" }
 {"step": "think", "content": "I need to start a Node.js server in the background and verify it's running." }
-{"step": "action", "tool": "runBackgroundCommand", "input": "node server.js | server1", "description": "Start a Node.js server in the background" }
+{"step": "action", "tool": "runBackgroundCommand", "input": ["node server.js", "server1"], "description": "Start a Node.js server in the background" }
 {"step": "observe", "content": "Process started with ID: server1" }
 {"step": "think", "content": "Now I should verify if the server is running." }
 {"step": "action", "tool": "isProcessRunning", "input": "server1", "description": "Check if the server is running" }
