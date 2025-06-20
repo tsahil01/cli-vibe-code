@@ -6,6 +6,7 @@ import { mainChatControl } from './control';
 import { chatRolePlay, createRolePlay, explainRolePlay, fixRolePlay, superAIAgentRolePlay, SYSTEM_PROMPT } from './prompts';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import fs from 'fs/promises';
+const path = require('path');
 
 const program = new Command();
 
@@ -167,16 +168,31 @@ program
 program
   .arguments('<dirPath>')
   .action(async (dirPath: string) => {
+    if (dirPath === ".") {
+        dirPath = process.cwd();
+        console.log(`The current directory is: ${dirPath}`);
+    }
+    dirPath = path.resolve(dirPath);
+    let stat;
     try {
+        stat = await fs.stat(dirPath);
+    } catch (e) {
+        console.error(`Error:`, e);
+        console.log(`'${dirPath}' does not exist.`);
+        return;
+    }
+    if (stat.isDirectory()) {
         const messages: ChatCompletionMessageParam[] = [
             { role: "system", content: SYSTEM_PROMPT(superAIAgentRolePlay) },
-        ]
+        ];
+        messages.push({ role: "user", content: `The current directory is: ${dirPath}` });
         console.log("🌈 Vibe CLI SUPER AI Agent");
-      const stat = await fs.stat(dirPath);
-      if (stat.isDirectory()) {
-        messages.push({ role: "user", content: `I am in the directory: ${dirPath}` });
         while (true) {
-            await mainChatControl(messages);
+            try {
+                await mainChatControl(messages);
+            } catch (e) {
+                console.error("Error in mainChatControl:", e);
+            }
             const answers = await inquirer.prompt({
                 type: 'input',
                 name: 'task',
@@ -188,11 +204,8 @@ program
             }
             messages.push({ role: "user", content: answers.task });
         }   
-      } else {
+    } else {
         console.log(`'${dirPath}' is not a directory.`);
-      }
-    } catch (e) {
-      console.log(`'${dirPath}' does not exist.`);
     }
   });
 
