@@ -5,6 +5,7 @@ import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import chalk from "chalk";
 import ora from "ora";
 import inquirer from "inquirer";
+import { ToolInput } from "./types";
 dotenv.config();
 
 export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
@@ -66,10 +67,8 @@ export async function mainChatControl(messages: ChatCompletionMessageParam[]) {
             }
         }
             const actionSpinner = ora(`Calling Action: ${parsedResponse.description || parsedResponse.tool}`).start();
-            const result = await runTool(parsedResponse.tool, parsedResponse.input);
+            const result = await runTool(parsedResponse.tool, parsedResponse.input as string[] );
             actionSpinner.succeed(`Action completed: ${parsedResponse.tool}, ${parsedResponse.description}`);
-            // Prevent duplicate observe messages
-            const lastMsg = messages[messages.length - 1];
             const observeMsg = JSON.stringify({ step: "observe", content: result });
             if (!(lastMsg && lastMsg.role === "assistant" && lastMsg.content === observeMsg)) {
                 messages.push({ role: "assistant", content: observeMsg });
