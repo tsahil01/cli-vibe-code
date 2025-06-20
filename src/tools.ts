@@ -6,17 +6,20 @@ import * as Diff from 'diff';
 
 const runningProcesses: { [key: string]: any } = {};
 
-export const availableTools = `
-- runCommand(command: string) : string - Executes any LINUX command and returns the STDOUT and STDERR. Some commands may require user confirmation, You need to handle that by yourself. Use && to run multiple commands.
-- runBackgroundCommand(command: string, processId: string) : string - Runs a command in the background and returns immediately. The processId is used to track the process. If the command is a long-running process, use this tool. Use && to run multiple commands.
-- stopProcess(processId: string) : string - Stops a running background process. Use this tool to stop the process.
-- isProcessRunning(processId: string) : string - Checks if a process is still running.
-- writeFile(filePath: string, content: string) : string - Writes content to a file. Use this tool to write content to a file.
-- openFile(filePath: string) : string - Opens a file in the default application. Use this tool to open a file in the default application.
-- editFile(filePath: string, content: string) : string - Edits a file and returns the result. Use this tool to edit a file. You should use the GNU patch format to edit the file.
-- openBrowser(url: string) : string - Opens a browser and navigates to the given URL. Use this tool to open a browser and navigate to the given URL.
-- grepSearch(searchTerm: string, filePath: string) : string - Searches for a term in the current directory and its subdirectories. Use this tool to search for a term in the current directory and its subdirectories.
-`
+export const availableTools = [
+  { name: "runCommand", params: ["command"], desc: "Execute a Linux command and return output." },
+  { name: "runBackgroundCommand", params: ["command", "processId"], desc: "Run a command in the background." },
+  { name: "stopProcess", params: ["processId"], desc: "Stop a background process." },
+  { name: "isProcessRunning", params: ["processId"], desc: "Check if a process is running." },
+  { name: "checkCurrentDirectory", params: [], desc: "Get the current directory." },
+  { name: "listFiles", params: ["filePath"], desc: "List files in a directory." },
+  { name: "readFile", params: ["filePath"], desc: "Read a file's content." },
+  { name: "writeFile", params: ["filePath", "content"], desc: "Write content to a file." },
+  { name: "editFile", params: ["filePath", "content"], desc: "Edit a file using a patch." },
+  { name: "openFile", params: ["filePath"], desc: "Open a file with the default application." },
+  { name: "openBrowser", params: ["url"], desc: "Open a URL in the browser." },
+  { name: "grepSearch", params: ["searchTerm", "filePath"], desc: "Search for a term in files." }
+];
 
 const expandHomeDir = (filePath: string) => {
     if (filePath.startsWith('~')) {
@@ -39,6 +42,35 @@ const runCommand = (command: string) => {
         });
     });
 }
+
+const checkCurrentDirectory = () => {
+    const currentDirectory = process.cwd();
+    return Promise.resolve(`Current directory: ${currentDirectory}`);
+}
+
+const listFiles = (filePath: string) => {
+    if (!filePath || typeof filePath !== 'string') {
+        return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
+    }
+    const expandedPath = expandHomeDir(filePath.trim());
+    return Promise.resolve(`Files in ${expandedPath}: ${fs.readdirSync(expandedPath)}`);
+}
+
+const readFile = (filePath: string) => {
+    if (!filePath || typeof filePath !== 'string') {
+        return Promise.reject(new Error('Invalid file path: Path must be a non-empty string'));
+    }
+    const expandedPath = expandHomeDir(filePath.trim());
+    return new Promise((resolve, reject) => {
+        fs.readFile(expandedPath, 'utf8', (error, data) => {
+            if (error) {
+                reject(new Error(`Failed to read file: ${error.message}`));
+                return;
+            }
+            resolve(`File ${expandedPath} read successfully: ${data}`);
+        });
+    });
+}   
 
 const writeFile = (input: string) => {
     const [filePath, content] = input.split("|");
@@ -218,6 +250,12 @@ export async function runTool(tool: string, input: string) {
                 return await stopProcess(input);
             case "isProcessRunning":
                 return await isProcessRunning(input);
+            case "checkCurrentDirectory":
+                return await checkCurrentDirectory();
+            case "listFiles":
+                return await listFiles(input);
+            case "readFile":
+                return await readFile(input);
             case "writeFile":
                 return await writeFile(input);
             case "openFile":
